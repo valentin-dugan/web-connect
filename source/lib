@@ -1,0 +1,98 @@
+# lib valentinD v1.5
+
+COLOR_RED="\033[1;31m"
+COLOR_GREEN="\033[1;32m"
+COLOR_YELLOW="\033[1;33m"
+COLOR_END="\033[0m"
+
+# Use sudo if run as non-root
+[[ $( id -u ) == 0 ]] || SUDO=sudo
+
+waiting_animation () {
+
+  local sp="/-\|"
+  printf "\b${sp:i++%${#sp}:1}"
+
+}
+
+
+print_help () {
+
+  cat $HELP_FILE
+
+}
+
+
+exec_upon_exit () {
+
+  local command=$1
+
+  # Concatenate trap commands.Otherwise it will override last trap command
+  TRAP_EXEC_CMD+="${command};"
+
+  trap "$TRAP_EXEC_CMD" SIGHUP EXIT
+
+}
+
+
+verbose () {
+
+	[[ $VERBOSE == true ]] && echo -e "${COLOR_YELLOW}$@${COLOR_END}" > /dev/tty
+
+}
+
+
+error () {
+
+  echo -e "${COLOR_RED}ERROR:${COLOR_END} $@" > /dev/tty
+  [[ "$2" == "print_help"  ]] && print_help
+  exit 1
+
+}
+
+
+source_file () {
+
+  local file="$1"
+  source "${SOURCE_DIR}/${file}"  || error "Sourcing has failed, file: ${SOURCE_DIR}/${file}"
+
+}
+
+
+cd_to_script_return_on_exit () {
+
+  local current_dir="${PWD}"
+  local script_dir="$( dirname ${BASH_SOURCE:-$0} )/.."
+  cd "$script_dir"
+  trap 'cd "$current_dir"' EXIT
+
+}
+
+
+install_package_if_not_present () {
+
+    COMMAND=$1
+    INSTALL_PACKAGE=$2
+
+    if [[ ! $( which "$COMMAND" )  ]]
+    then
+
+        echo "Command ${COMMAND} not found."
+        read -p "Press ENTER to install package or CTRL+C to exit."
+
+        ${INSTALL_PACKAGE}
+
+    fi
+
+}
+
+
+# Detect OS
+case $( uname -s ) in
+
+	Linux*)    OS=linux ;;
+	Darwin*)   OS=mac ;;
+	*)         error "Unknown OS." ;;
+
+esac
+

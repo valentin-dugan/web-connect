@@ -1,0 +1,61 @@
+get_available_new_id () {
+
+  local file="$1"
+  local id=1
+
+  # Find unused id in record file
+  while egrep -q '^ID='\'$id\''$' "$file"
+  do
+
+      id=$(( id+1 ))
+
+  done
+
+  echo $id
+
+}
+
+
+append_variables_to_file () {
+
+local file="$1"
+
+cat << EOF >> "$file"
+ID='${ID}'
+TITLE='${TITLE}'
+GROUP='${GROUP:=default}'
+VPN='${VPN}'
+PORTFORWARD='${PORTFORWARD}'
+URL='${URL}'
+DETAILS='${DETAILS}'
+
+EOF
+
+}
+
+add_new_record () {
+
+
+    local file="$( awk '$1 ~ "include_file" && $2 ~ "'${INCLUDED_FILE}'" {print $3}' ${SETTINGS_FILE} | tr -d '"' | tr -d "'"  | head -1 )"
+    file="$(eval echo $file )"
+
+    [[ -n $TITLE ]] || error "Title is required"
+    [[ -n $URL ]]   || error "URL is required"
+
+    if [[ -n "$ID" ]]
+    then
+
+        # Validate ID variable
+        [[ "$ID" =~ ^[a-zA-Z0-9]+ ]]       || error "ID has to start with numbers and letters"
+        egrep -q '^ID='$ID'$' "$file" && error "ID is already in use"
+
+    else
+
+        ID=$( get_available_new_id "$file" )
+
+    fi
+
+    append_variables_to_file "$file"
+
+}
+

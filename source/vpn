@@ -1,0 +1,53 @@
+expand_vpn_var () {
+
+	VPN="$( eval echo "$VPN" )"
+	verbose "VPN certificate file: $VPN"
+
+}
+
+
+vpn_is_connected () {
+
+    [[ $OS == mac ]]   && netstat -nr -f inet | grep -q utun && return 0
+    [[ $OS == linux ]] && netstat -nr -f inet | grep -q utun && return 0
+
+}
+
+
+connect_vpn () {
+
+	expand_vpn_var
+
+	local url="$URL"
+	local vpn="$VPN"
+	local vpn_output="${CACHE_DIR}/vpn_output"
+
+    # Try getting http response without a vpn
+	if curl --max-time 1 -Is "$url" &>/dev/null
+    then
+
+      verbose "Getting http response without VPN is successful, URL: $url "
+      return
+
+	else
+
+      if ! vpn_is_connected
+      then
+
+          printf ${COLOR_GREEN}"  ●  "${COLOR_END}"Connecting to VPN server... "
+
+          nohup $SUDO openvpn --config "$vpn" > "$vpn_output" 2>&1 &
+
+          # Wait until VPN tunnel connects
+          until vpn_is_connected ; do waiting_animation; sleep 0.5 ; done
+
+          printf "\bdone\n"
+
+          sleep 0.4
+
+      fi
+
+	fi
+
+}
+

@@ -1,0 +1,166 @@
+file_etc_hosts_contains () {
+
+  local host=$1
+  local ip=127.0.0.1
+  local hosts_file=/etc/hosts
+
+  grep "${ip}" "$hosts_file" | grep -q "${host}"
+
+}
+
+
+edit_etc_hosts () {
+
+  local action=$1
+  local host=$2
+  local hosts_file=/etc/hosts
+  local ip=127.0.0.1
+
+  # Backup /etc/hosts, only once when you run script for first time
+  local hosts_file_backup="${CACHE_DIR}/etc_hosts.bck"
+  [[ -f "$hosts_file_backup" ]] || cp "$hosts_file" "$hosts_file_backup"
+
+
+  case $action in
+
+    add)
+
+        if file_etc_hosts_contains $host
+        then
+
+            :
+
+        else
+
+            # Create copy of /etc/hosts, add $host on same line with localhost
+            [[ $OS == mac ]]   && $SUDO sed -i '' -E "/${ip}/ s/(.*)/\1 ${host}/" "${hosts_file}"
+            [[ $OS == linux ]] && $SUDO sed -i    -E "/${ip}/ s/(.*)/\1 ${host}/" "${hosts_file}"
+
+            local hosts_file_modified=true
+            verbose "Host $host is added to $hosts_file"
+
+        fi
+        ;;
+
+    remove)
+
+        if file_etc_hosts_contains $host
+        then
+
+            # Backup /etc/hosts and remove $host
+            [[ $OS == mac ]]   && $SUDO sed -i '' -E "/${ip}/ s/${host}//g" "${hosts_file}"
+            [[ $OS == linux ]] && $SUDO sed       -E "/${ip}/ s/${host}//g" "${hosts_file}"
+
+            local hosts_file_modified=true
+            verbose "\nHost $host is removed from $hosts_file"
+
+        fi
+        ;;
+
+  esac
+
+  [[ $hosts_file_modified == true ]] && return 0
+
+}
+
+
+open_port () {
+
+	local port_number=$1 
+	lsof -nP +c 15 | grep LISTEN | grep -q ":$port_number"
+
+}
+
+
+get_unused_port () {
+	
+	verbose "\nSearching for an unused port..."
+
+	local port=9000
+
+	while open_port $port
+	do
+
+		port=$(( port+1 ))
+
+	done
+
+	verbose "...port $port is chosen"
+
+    # Return unused port on local
+	echo $port
+
+}
+
+
+expand_port_var () {
+
+  if [[ "$URL" =~ '${PORT}' ]]
+	then
+
+        export PORT=$( get_unused_port )
+
+	else
+
+        # Get port number from URL to test is later if connected
+        export PORT=$(echo $URL | sed -E 's|http[s]?://.*:([0-9]*).*|\1|')
+        [[ $PORT == [0-9]+ ]] || export PORT=9999
+
+	fi
+
+}
+
+
+expand_host_var () {
+
+  HOST="$( echo ${TITLE}.${GROUP}.portforward | tr ' ' '-' )"
+
+}
+
+
+expand_portforward_var () {
+
+  PORTFORWARD="$( eval echo $PORTFORWARD )"
+
+}
+
+
+portforward () {
+
+  printf ${COLOR_YELLOW}"  ●  "${COLOR_END}"Create portforward... "
+
+  expand_host_var
+  expand_port_var
+  expand_portforward_var
+
+  if [[ $SMART_LINK == true ]]
+  then
+
+    edit_etc_hosts add "$HOST"
+    exec_upon_exit "edit_etc_hosts remove $HOST &>/dev/null"
+
+  fi
+
+  # Run portforward command in the background, save the pid number and kill portforward upon exit
+  $PORTFORWARD  >/dev/null 2>/dev/tty &
+  local proc_id=$!
+  exec_upon_exit "kill $proc_id; verbose Portforward with PID $proc_id was killed"
+
+  verbose "Portforward command is used:  $PORTFORWARD"
+
+  # Wait for port to connect
+  until open_port "$PORT"
+  do
+
+    waiting_animation
+    sleep 0.2
+  
+  done
+
+  # This is useful to keep portforward open
+  PORTFORWARD_IS_CREATED=true
+
+  printf  "\bdone\n"
+
+}
+

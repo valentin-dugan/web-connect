@@ -1,0 +1,125 @@
+
+source_vars_from  () {
+
+  local file="$1"
+  local id="$2"
+  local tmp="${CACHE_DIR}/tmp_file"
+
+  echo > "$tmp"
+  egrep -A7 "^ID='${id}'$" "${file}" > "$tmp"
+  source "$tmp"
+
+  verbose "Sourcing: ID='$ID' TITLE='$TITLE' GROUP='$GROUP' VPN='$VPN' PORTFORWARD='$PORTFORWARD' URL='$URL' DETAILS='$DETAILS'"
+
+}
+
+
+include_file () {
+
+  local file="$2"
+  local prefix="$3"
+
+  verbose "Including web-config file: ${file}"
+
+  echo "$( $SHASUM ${file} | awk '{print $1}' ):${file}:${prefix}" >> "${TMP_SHA_FILE}"
+
+}
+
+
+get_all_ids_from () {
+
+    local file=$1
+
+    verbose "Get all ids from ${file}"
+
+    grep 'ID=' "${file}" | awk -F '=' '{print $2}' | tr -d "'"
+
+}
+
+
+generating_view_file_from () {
+
+    local source_file="$1"
+    local prefix="$2"
+
+    for id in $( get_all_ids_from "$source_file" )
+    do
+
+        local vpn_emoji=""
+        local portforward_emoji=""
+
+        waiting_animation
+        source_vars_from "$source_file" "$id"
+
+        local alias="${prefix}${id}"
+        local title="$TITLE"
+        local group="$GROUP"
+        local details="$DETAILS"
+        local vpn="$VPN"
+        local portforward="$PORTFORWARD"
+
+        [[ -n "$vpn" ]]         && local vpn_emoji=●
+        [[ -n "$portforward" ]] && local portforward_emoji=●
+
+        echo "${id}++++${source_file}++++$( echo -e "${COLOR_RED} ${alias} ${COLOR_END}" )++++$( echo -e "${COLOR_GREEN}${vpn_emoji}${COLOR_END}" )$( echo -e "${COLOR_YELLOW}${portforward_emoji}${COLOR_END}" )++++${title}++++${group}++++${details}" >> "${VIEW_FILE}"
+
+    done
+
+}
+
+
+generating_view_is_needed () {
+
+    local trigger
+
+    [[ -f "$VIEW_FILE" ]]      || trigger=true
+    [[ -f "$SHA_FILE" ]]       || trigger=true
+
+
+    diff <( cat "${TMP_SHA_FILE}" 2>/dev/null ) <( cat "${SHA_FILE}" 2>/dev/null ) >/dev/null || trigger=true
+
+    [[ $trigger == true ]] && return 0 || return 1
+
+}
+
+
+build () {
+
+  echo > "${TMP_SHA_FILE}"
+
+  # Create TMP_SHA_FILE from functions in SETTINGS_FILE
+  egrep '^[ \t]*include_file ' "${SETTINGS_FILE}" | while read line
+  do
+
+    eval "$line"
+
+  done
+
+  if generating_view_is_needed
+  then
+
+      printf "Generating view file..."
+      echo > ${VIEW_FILE}
+
+
+      cat "${TMP_SHA_FILE}" | sed 1d | while read line
+      do
+
+          local file=$( echo $line | awk -F ':' '{print $2}' )
+          local prefix=$( echo $line | awk -F ':' '{print $3}' )
+
+          [[ -f "${file}" ]] || error "File ${file} not found."
+
+          generating_view_file_from "${file}" "${prefix}"
+
+      done
+
+      printf "done"
+      echo
+
+      cp "${TMP_SHA_FILE}" "${SHA_FILE}"
+
+  fi
+
+}
+

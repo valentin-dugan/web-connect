@@ -1,0 +1,35 @@
+update_entry () {
+
+  local file="$1"
+  local line_number="$2"
+  local variable="$3"
+  local value="$4"
+
+  [[ $value == ' ' ]] && value=""
+
+  [[ $OS == mac ]]     &&  sed -i '' ${line_number}'s|.*|'${variable}'='\'${value}\''|' "${file}"
+  [[ $OS == linux ]]   &&  sed -i    ${line_number}'s|.*|'${variable}'='\'${value}\''|' "${file}"
+
+}
+
+
+edit_entry_cmd () {
+
+    local alias="$ALIAS"
+
+    local id="$( egrep '^.*\+\+\+\+.*\+\+\+\+.* '${alias}' .*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*$'  ${VIEW_FILE} | awk -F '\\+\\+\\+\\+' '{print $1}' )"
+
+    local file="$( egrep '^.*\+\+\+\+.*\+\+\+\+.* '${alias}' .*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*$'  ${VIEW_FILE} | awk -F '\\+\\+\\+\\+' '{print $2}' )"
+
+    id_line=$( grep -n "ID='${id}'" "$file" | awk -F ':' '{ print $1 }' )
+
+    [[ -n $ID_NEW ]]              && update_entry "$file"     "$id_line"       "ID"          "$ID_NEW"
+    [[ -n $TITLE ]]               && update_entry "$file" "$(( id_line + 1 ))" "TITLE"       "$TITLE"
+    [[ -n $GROUP_TRIGGER ]]       && update_entry "$file" "$(( id_line + 2 ))" "GROUP"       "$GROUP"
+    [[ -n $VPN_TRIGGER ]]         && update_entry "$file" "$(( id_line + 3 ))" "VPN"         "$VPN"
+    [[ -n $PORTFORWARD_TRIGGER ]] && update_entry "$file" "$(( id_line + 4 ))" "PORTFORWARD" "$PORTFORWARD"
+    [[ -n $URL ]]                 && update_entry "$file" "$(( id_line + 5 ))" "URL"         "$URL"
+    [[ -n $DETAILS_TRIGGER ]]     && update_entry "$file" "$(( id_line + 6 ))" "DETAILS"     "$DETAILS"
+
+}
+

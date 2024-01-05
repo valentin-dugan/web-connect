@@ -1,0 +1,64 @@
+
+OPTIONS:
+
+  --settings                   # Edit user settings.conf file
+  -h | --help                  # Print help
+  -s | --show <id>             # Show all data for id
+
+
+  --new <included_file>        # Create a new record
+      -i | --id ''             # Optional, add record with a specific id
+      -t | --title ''          # Required, add title to your record
+      -g | --group ''          # Optional, recommended to use uppercase
+      -v | --vpn ''            # Optional, path to a openvpn config file
+      -p | --portforward ''    # Optional, ssh or kubectl portforward command
+      -u | --url ''            # Required, URL to be open in browser
+      -d | --details ''        # Optional, some description of your record
+
+
+  --edit <id>
+      -i | --id ''             # Change id value
+      -t | --title ''          # Change title value
+      -g | --group ''          # Change group value
+      -v | --vpn ''            # Change vpn file path
+      -p | --portforward ''    # Change portforward command
+      -u | --url ''            # Change URL
+      -d | --details ''        # Change description
+
+
+
+USAGE:
+
+
+  # Create new record:
+  # If no --id option is used it will auto-generate id
+
+     ./run.sh --new default --title 'Google Search' --url 'https://google.com'
+
+
+  # Create complex new record:
+  # --new default, is the include_file stored in settings.conf
+  # --vpn '$VPN_MY_SITE', variable is declared in settings.conf
+  # variable ${HOST}, when a record is selected it will generate a FQDN from the title and group values and use it in /etc/hosts
+  # variable ${PORT}, when a record is selected it will scan for open port on local machine
+
+      ./run.sh --new default \
+               --id 'mygrafdev' \
+               --title 'Grafana DEV' \
+               --group 'MYPROJECT' \
+               --vpn '$VPN_MY_SITE' \
+               --portforward 'kubectl --kubeconfig $KUBE_MY_CLUSTER port-forward svc/grafana-service ${PORT}:3000' \
+               --url 'http://${HOST}:${PORT}/' \
+               --details 'Monitoring'
+
+
+  # Open one or more links using id:
+
+      ./run.sh ID_1 ID_2 ID_3
+
+
+  # Open link using interactive mode:
+  # select multiple lines by pressing TAB key
+
+      ./run.sh
+

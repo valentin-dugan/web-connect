@@ -1,0 +1,28 @@
+# In case OS auto detect dosen't work you can specify which OS you're using. 
+#OS=linux  # mac or linux
+
+# For more logs during the execution of program
+#VERBOSE=true
+
+# Use terminal editor
+#EDITOR=nano
+
+# Links will be open in default browser or use specific browser
+#BROWSER="firefox"
+
+# Permit app to edit /etc/hosts
+SMART_LINK="true"
+
+# Declare variables pointing to a openvpn config file to be used in record file
+#VPN_MY_SITE="~/openvpn/my-site.ovpn"
+
+# Declare variables pointing to a kubeconfig file to be used in record file
+#KUBE_MY_CLUSTER="~/.kube/my_cluster_config"
+
+# Add a record file by using function
+#  include_file "ARG1" "ARG2" "ARG3"
+#  ARG1 - use a name for the record file to be referenced when adding a new record via command line
+#  ARG2 - location of record file
+#  ARG3 - for each id add a prefix, useful when having id conflict across multiple record files
+include_file "default" "${DATA_DIR}/web-connect"
+

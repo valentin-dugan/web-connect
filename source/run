@@ -1,0 +1,83 @@
+fzf_command () {
+
+  # Option --with-nth, from which column to start displaying
+  fzf \
+      --with-nth=3.. \
+      --ansi \
+      --multi \
+      --bind "ctrl-e:execute( echo {} )"
+
+}
+
+
+user_pick_from_menu () {
+
+  local view_file="${VIEW_FILE}"
+
+  # Prompt fzf menu
+  cat "${view_file}" | column -s '++++' -t | fzf_command | awk '{print $3}'
+
+}
+
+
+open_browser () {
+
+  local url=$1
+
+  verbose "Open browser with URL: $url"
+
+  if [[ -n $BROWSER ]]
+  then
+
+    [[ $OS == "mac" ]] && open -a "$BROWSER" "$url"
+    [[ $OS == "linux" ]] && "$BROWSER" "$url"
+
+  else
+
+    [[ $OS == "mac" ]] && open "$@"
+    [[ $OS == "linux" ]] && xdg-open "$@"
+
+  fi
+
+}
+
+
+connect () {
+
+    local alias=$1
+
+    local id="$( egrep '^.*\+\+\+\+.*\+\+\+\+.* '${alias}' .*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*$'  ${VIEW_FILE} | awk -F '\\+\\+\\+\\+' '{print $1}' )"
+
+    local file="$( egrep '^.*\+\+\+\+.*\+\+\+\+.* '${alias}' .*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*$'  ${VIEW_FILE} | awk -F '\\+\\+\\+\\+' '{print $2}' )"
+
+    [[ -n "$id" ]] || error "ID $id is empty"
+
+    source_vars_from "${file}" "$id"
+
+    echo -e "  ${COLOR_RED}${alias}${COLOR_END} - ${TITLE} - ${GROUP}"
+
+    [[ -n $VPN ]] && connect_vpn
+
+    [[ -n $PORTFORWARD ]] && portforward
+
+    open_browser $( eval "echo $URL" )
+
+}
+
+
+run_with_arguments () {
+
+    if [[ -n $1 ]]
+    then
+        local args=( $@ )
+    else
+        local args=( $( user_pick_from_menu ) )
+    fi
+
+    for alias in "${args[@]}"
+    do
+        connect $alias
+    done
+
+}
+

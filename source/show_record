@@ -1,0 +1,21 @@
+
+show () {
+
+      local alias="$1"
+
+      [[ -n $alias ]] || error "Alias not found"
+
+      local id="$( egrep '^.*\+\+\+\+.*\+\+\+\+.* '${alias}' .*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*$'  ${VIEW_FILE} | awk -F '\\+\\+\\+\\+' '{print $1}' )"
+
+      [[ -n $id ]] || error "ID not found"
+
+      local file="$( egrep '^.*\+\+\+\+.*\+\+\+\+.* '${alias}' .*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*\+\+\+\+.*$'  ${VIEW_FILE} | awk -F '\\+\\+\\+\\+' '{print $2}' )"
+
+      [[ -n $file ]] || error "File $file not found"
+
+      egrep -A6 "ID='${id}'" "$file"
+      echo "FILE='$file'"
+      echo "ALIAS='$alias'"
+}
+
+
