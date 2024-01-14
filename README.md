@@ -21,10 +21,10 @@
     echo $SHELL
 
     # If using bash shell run command
-    grep -q 'alias web' "${HOME}/.bashrc" || alias web="${PWD}/run.sh" >> "${HOME}/.bashrc"
+    grep -q 'alias web' "${HOME}/.bashrc" || echo alias web="${PWD}/run.sh" >> "${HOME}/.bashrc"
 
-    # If using zsh shell run commnad
-    grep -q 'alias web' "${HOME}/.zshrc" || alias web="${PWD}/run.sh" >> "${HOME}/.zshrc"
+    # If using zsh shell run command
+    grep -q 'alias web' "${HOME}/.zshrc" || echo alias web="${PWD}/run.sh" >> "${HOME}/.zshrc"
     ```
 
 3. In a new terminal run command `web`
