@@ -17,11 +17,11 @@ install_dependencies () {
 	if [[ $OS == "linux" ]]
 	then
 
-		install_package_if_not_present sha256sum "${SUDO} apt update && ${SUDO} apt install sha256sum"
-		install_package_if_not_present fzf       "${SUDO} apt update && ${SUDO} apt install fzf"
-		install_package_if_not_present curl      "${SUDO} apt update && ${SUDO} apt install curl"
-		install_package_if_not_present netstat   "${SUDO} apt update && ${SUDO} apt install netstat"
-        install_package_if_not_present openvpn   "${SUDO} apt update && ${SUDO} apt install openvpn"
+		install_package_if_not_present sha256sum "${SUDO} apt update ; ${SUDO} apt install sha256sum"
+		install_package_if_not_present fzf       "${SUDO} apt update ; ${SUDO} apt install fzf"
+		install_package_if_not_present curl      "${SUDO} apt update ; ${SUDO} apt install curl"
+		install_package_if_not_present netstat   "${SUDO} apt update ; ${SUDO} apt install netstat"
+        install_package_if_not_present openvpn   "${SUDO} apt update ; ${SUDO} apt install openvpn"
 
         # Detect sudo command if you run script as regular user
         [[ $( id -u ) > 0 ]] && install_package_if_not_present sudo "${SUDO} update && ${SUDO} apt install sudo"
