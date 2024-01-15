@@ -80,7 +80,7 @@ install_package_if_not_present () {
         echo "Command ${COMMAND} not found."
         read -p "Press ENTER to install package or CTRL+C to exit."
 
-        ${INSTALL_PACKAGE}
+        eval "${INSTALL_PACKAGE}"
 
     fi
 
