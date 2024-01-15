@@ -9,7 +9,7 @@ expand_vpn_var () {
 vpn_is_connected () {
 
     [[ $OS == mac ]]   && netstat -nr -f inet | grep -q utun && return 0
-    [[ $OS == linux ]] && netstat -nr -f inet | grep -q utun && return 0
+    [[ $OS == linux ]] && netstat -nr -f inet | grep -q tun0 && return 0
 
 }
 
